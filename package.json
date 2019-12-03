@@ -1,5 +1,5 @@
 {
-  "name": "advent-of-code-2018",
+  "name": "advent-of-code-2019",
   "license": "MIT",
   "scripts": {
     "lint": "eslint . --ext .js",
