@@ -32,8 +32,19 @@ const loadCommaSeparatedFile = async (day, formatter) => {
   return values
 }
 
+const loadMultilineCommaSeparatedFile = async (day, formatter) => {
+  const file = await loadFile(day)
+  const values = file.map(line => {
+    const lineValues = line.split(',')
+    if (formatter) return lineValues.map(value => formatter(value))
+    return lineValues
+  })
+  return values
+}
+
 module.exports = {
   loadFile,
   loadSingleLineFile,
-  loadCommaSeparatedFile
+  loadCommaSeparatedFile,
+  loadMultilineCommaSeparatedFile
 }
