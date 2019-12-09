@@ -36,12 +36,20 @@ const executeInstruction = (memory, index, input) => {
         skipOps: 4
       }
     }
-    case 3:
-      memory[memory[index + 1]] = input.pop()
+    case 3: {
+      if (input.length === 0) {
+        return {
+          output: true,
+          skipOps: 0
+        }
+      }
+      const [nextInput] = input.splice(0, 1)
+      memory[memory[index + 1]] = nextInput
       return {
         output: true,
         skipOps: 2
       }
+    }
     case 4: {
       const value = (instruction.is1stParamPositionMode) ? memory[memory[index + 1]] : memory[index + 1]
       return {
@@ -125,34 +133,32 @@ module.exports = async () => {
   const phaseSettings = permutator([5, 6, 7, 8, 9])
 
   let maxVal = null
-  let maxValPhases = null
 
   phaseSettings.forEach(currentPhaseSettings => {
     const ampMemories = currentPhaseSettings.map(phase => instructions.slice(0))
-    const ampIndexes = [0, 0, 0, 0, 0]
+    const ampInstructionIndexes = [0, 0, 0, 0, 0]
+    const ampInputs = currentPhaseSettings.map(phase => [phase])
+    ampInputs[0].push(0)
+    const ampStillRunning = [true, true, true, true, true]
 
-    let currentInput = 0
-    currentPhaseSettings.forEach((phase, ampIndex) => {
-      const memory = ampMemories[ampIndex]
-      currentInput.push(phase)
-      let instructionIndex = 0
-      let result = false
-      const outputs = []
-      do {
-        result = executeInstruction(memory, instructionIndex, currentInput)
-        if (result.output !== false && result.output !== true) outputs.push(result.output)
-        else {
-          currentInput = outputs
+    do {
+      ampMemories.forEach((memory, ampIndex) => {
+        if (!ampStillRunning[ampIndex]) return
+        const result = executeInstruction(memory, ampInstructionIndexes[ampIndex], ampInputs[ampIndex])
+        if (result.output !== false && result.output !== true) {
+          if (ampIndex === ampInputs.length - 1) ampInputs[0].push(result.output)
+          else ampInputs[ampIndex + 1].push(result.output)
+        } else if (result.output === false) {
+          ampStillRunning[ampIndex] = false
         }
-        instructionIndex += result.skipOps
-      } while (result.output !== false)
-    })
+        ampInstructionIndexes[ampIndex] += result.skipOps
+      })
+    } while (_.includes(ampStillRunning, true))
 
-    if (!maxVal || lastOutput > maxVal) {
-      maxVal = lastOutput
-      maxValPhases = currentPhaseSettings
+    if (!maxVal || ampInputs[0][0] > maxVal) {
+      maxVal = ampInputs[0][0]
     }
   })
 
-  console.log(`Done: max val: ${maxVal}, phases: ${maxValPhases}`)
+  console.log(`Done: max val: ${maxVal}`)
 }
